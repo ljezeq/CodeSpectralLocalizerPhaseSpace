@@ -48,17 +48,33 @@ class LDL:
         return self.p.solve(self.u, b)
 
 
-def sig_half_and_gap(lz, want_gap=True):
+def sig_half_and_gap(lz, want_gap=True, shifts=(0.0, 1e-3, -1e-3, 3e-3, -3e-3)):
+    """Sig/2 from the inertia of the LDL^T factorization, and the gap by shift-invert Lanczos.
+
+    When Pardiso has to perturb pivots (at M = 0 every diagonal entry of the realified
+    localizer vanishes), neither its inertia nor its solves can be trusted.  The
+    factorization is then redone for L - s with a small shift s, which has the
+    inertia of L as long as |s| is below the gap (checked).
+    """
     r = realify(lz)
-    f = LDL(r)
-    npos, nneg = f.inertia()
+    eye = sparse.identity(r.shape[0], format="csr")
+    for shift in shifts:
+        f = LDL(r if shift == 0.0 else (r - shift * eye).tocsr())
+        npos, nneg = f.inertia()
+        if f.perturbed == 0:
+            break
+        f.p.free_memory(everything=True)
+    else:
+        raise RuntimeError("Pardiso perturbed pivots for every shift tried")
     z = (npos - nneg) // 4  # realification doubles every eigenvalue
     g = np.nan
     if want_gap:
         op = spla.LinearOperator(r.shape, matvec=f.solve, dtype=float)
         mu = spla.eigsh(op, k=4, which="LM", return_eigenvectors=False, tol=1e-6)
-        g = float(1 / np.max(np.abs(mu)))
-    sig_half_and_gap.perturbed = f.perturbed
+        g = float(np.min(np.abs(1.0 / mu + shift)))   # eigenvalues of L closest to the shift
+        if abs(shift) >= g:
+            raise RuntimeError("the shift is not below the gap: the inertia may differ")
+    sig_half_and_gap.shift = shift
     f.p.free_memory(everything=True)
     del f
     return z, g
@@ -93,7 +109,7 @@ def main():
     dis = onsite_disorder(lat, a.disorder, a.seed) if a.disorder > 0 else None
     rot = majorana_rotation(g1.shape[0]) if a.z2 else None
     ms = np.array(a.ms) if a.ms else np.linspace(a.m_min, a.m_max, a.m_num)
-    out = {k: [] for k in ("m", "z", "zgap", "z2", "z2gap", "perturbed")}
+    out = {k: [] for k in ("m", "z", "zgap", "z2", "z2gap", "shift")}
     print(f"L={a.length} kappa={a.kappa} R={geo['radius']} n={8*a.length**3}", flush=True)
     for m in ms:
         t0 = time.time()
@@ -110,9 +126,9 @@ def main():
             z2 = pf_sign(am)
         elif a.z2_parity:
             z2 = (-1) ** abs(z)
-        for k, v in zip(out, (m, z, zg, z2, z2g, sig_half_and_gap.perturbed)):
+        for k, v in zip(out, (m, z, zg, z2, z2g, sig_half_and_gap.shift)):
             out[k].append(v)
-        print(f"M={m:.3f} Z={z:+d} gap={zg:.4g} Z2={z2:+d} pert={sig_half_and_gap.perturbed} ({time.time()-t0:.1f}s)", flush=True)
+        print(f"M={m:.3f} Z={z:+d} gap={zg:.4g} Z2={z2:+d} shift={sig_half_and_gap.shift:g} ({time.time()-t0:.1f}s)", flush=True)
         np.savez(a.output, **{k: np.array(v) for k, v in out.items()}, length=a.length, kappa=a.kappa, disorder=a.disorder)
 
 

@@ -44,8 +44,8 @@ def graphene_operators(lattice, g3_offset, valley=VALLEY):
         G_3 = c - (e^{-i Kx} Tx^dag + h.c.) - (e^{-i Ky} Ty^dag + h.c.),
         g_3(k) = c - 2 cos(kx - Kx) - 2 cos(ky - Ky),
 
-    which for c = 3 is -1 at K, +5 at K', and its zero set is a closed curve
-    of radius ~1 around K only.
+    which for c = 2 (the paper) is -2 at K and +4 at K' and Gamma, so that its
+    zero set is a closed curve around K only.
     """
     sigma_0, sigma_x, sigma_y, _ = pauli()
     sigma_plus = 0.5 * (sigma_x + 1j * sigma_y)
@@ -62,6 +62,7 @@ def graphene_operators(lattice, g3_offset, valley=VALLEY):
     return (hamiltonian.tocsr(), g1.tocsr(), g2.tocsr(),
             embed(g3_site, sigma_0).tocsr())
 
+
 def semimetal_operators(lattice, g3_offset):
     """Return H, G_1 = X, G_2 = Y and G_3."""
     sigma_0, sigma_x, sigma_y, _ = pauli()
@@ -72,12 +73,14 @@ def semimetal_operators(lattice, g3_offset):
     g3_site = g3_offset * lattice.identity - 2.0 * (lattice.cos(0) + lattice.cos(1))
     return hamiltonian.tocsr(), g1.tocsr(), g2.tocsr(), embed(g3_site, sigma_0).tocsr()
 
+
 def time_reversal_gammas():
     """The four anticommuting matrices used for the class-AII reduction."""
     alpha_0, alpha_x, alpha_y, alpha_z = pauli()
     beta_0, beta_x, _, beta_z = pauli()
     return [np.kron(alpha_x, beta_0), np.kron(alpha_z, beta_0),
             np.kron(alpha_y, beta_x), np.kron(alpha_y, beta_z)]
+
 
 def time_reversal_localizer(hamiltonian, confining, kappa):
     gammas = time_reversal_gammas()

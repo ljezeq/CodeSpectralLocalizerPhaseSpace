@@ -32,8 +32,8 @@ it is identical with that version, and differs by one or two pixels in size with
 ## Recomputing the data
 
 `run_all.sh` lists the command and the parameters behind each data file. Running these
-commands reproduces the files of `data/` to rounding error (for Fig. 2(c,d), checked at
-two values of M/t).
+commands reproduces the files of `data/` to rounding error, with one exception noted below
+for Fig. 2(c,d).
 
 | Figure | File | Data | Script | Parameters |
 | --- | --- | --- | --- | --- |
@@ -56,7 +56,12 @@ factorization (MKL Pardiso, through `pypardiso`) of a localizer of size
 about 15 minutes. At L = 20 the ℤ₂ index uses the identity sgn Pf A = (−1)^{Sig/2}
 of the doubled model (option `--z2-parity`); the option `--z2` computes the Pfaffian
 directly (with `pfapack`), which is feasible up to L ≈ 10 and was used to check the
-identity for L ≤ 8.
+identity for L ≤ 8. Where Pardiso has to perturb pivots (at M/t = 0 every diagonal entry of
+the realified localizer vanishes), neither its inertia nor its solves can be trusted, and
+the script redoes the factorization with a small shift, below the gap (the `shift` array of
+its output). In the clean sweep this happens at M/t = 0 and 0.5; there the recomputed gaps
+differ from those of `data/` (and of the published figure) by at most 4 × 10⁻⁵, and every
+index is unchanged.
 
 In the first arXiv version, Fig. 2(a,b) was computed without orthonormalizing the
 eigenvectors of degenerate levels, which made the weights of the four hinges slightly
