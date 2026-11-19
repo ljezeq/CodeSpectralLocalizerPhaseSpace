@@ -1,0 +1,8 @@
+# tested with Python 3.13, numpy 2.5, scipy 1.18 and matplotlib 3.11.2
+numpy
+scipy
+matplotlib
+# only for figures/fig02b_hoti_indices.py (Fig. 2(c,d) at L = 20; tested with pypardiso 0.4.7 and MKL 2026.2)
+pypardiso
+# only for the dense Pfaffian check of fig02b_hoti_indices.py --z2 (L <= 10)
+pfapack
