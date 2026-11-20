@@ -3,7 +3,7 @@
 Code and data for every figure of
 
 > L. Jezequel and C. Mora, *Spectral localizers in phase space: ℤ and ℤ₂ invariants
-> for higher-order, semimetal, and valley modes* (2026).
+> for higher-order, semimetal, and valley modes*, [arXiv:2611.26160](https://arxiv.org/abs/2611.26160) (2026).
 
 ## Contents
 
